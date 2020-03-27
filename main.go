@@ -1,66 +1,24 @@
 package main
 
 import (
-	"encoding/json"
-	"fmt"
-	"io/ioutil"
+	"delivery-slot-checker/internal/supermarket"
 	"log"
-	"time"
 )
 
-const asdaStatusAvailable = "AVAILABLE"
-const asdaStatusUnavailable = "UNAVAILABLE"
-
-type asdaDeliverySlot struct {
-	Status string `json:"status"`
-	StartTime time.Time `json:"start_time"`
-}
-
-func (ds asdaDeliverySlot) IsAvailable() bool {
-	return ds.Status == asdaStatusAvailable
-}
-
-type asdaResponse struct {
-	StatusCode string `json:"statusCode"`
-	Data struct {
-		SlotDays []struct {
-			Slots []struct {
-				SlotInfo asdaDeliverySlot `json:"slot_info"`
-			} `json:"slots"`
-		} `json:"slot_days"`
-	} `json:"data"`
-}
-
 func main() {
-	contents := getDataFromCache("cached_success")
-	var response asdaResponse
+	client := supermarket.NewClient()
 
-	err := json.Unmarshal(contents, &response)
+	slots, err := client.GetDeliverySlots()
 	if err != nil {
-		log.Fatal(err)
-	}
-
-	if response.StatusCode == asdaStatusUnavailable {
-		log.Fatal("site is down")
-	}
-
-	var availableSlots []asdaDeliverySlot
-	for _, slotDay := range response.Data.SlotDays {
-		for _, slot := range slotDay.Slots {
-			if slot.SlotInfo.IsAvailable() {
-				availableSlots = append(availableSlots, slot.SlotInfo)
-			}
+		switch err.(type) {
+		case supermarket.ServiceUnavailableError:
+			log.Fatal(err)
+		default:
+			log.Fatalf("unexpected error: %s", err)
 		}
 	}
 
-	log.Printf("%+v\nFound %d available slots", availableSlots, len(availableSlots))
-}
+	availableSlots := supermarket.FilterAvailableDeliverySlots(slots)
 
-func getDataFromCache(filename string) []byte {
-	data, err := ioutil.ReadFile(fmt.Sprintf("./data/%s.txt", filename))
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	return data
+	log.Printf("Found %d available slots", len(availableSlots))
 }
