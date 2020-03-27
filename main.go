@@ -2,6 +2,7 @@ package main
 
 import (
 	"delivery-slot-checker/internal/supermarket"
+	"encoding/base64"
 	"encoding/json"
 	"log"
 )
@@ -39,5 +40,9 @@ func main() {
 		manifest.GetLastDate().Format("Mon 2 Jan"),
 	)
 
-	data, _ := json.Marshal(manifest); log.Println(string(data))
+	data, _ := json.Marshal(manifest)
+	log.Println(string(data))
+
+	encoded := base64.URLEncoding.EncodeToString(data)
+	log.Println(encoded)
 }
