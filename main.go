@@ -2,6 +2,7 @@ package main
 
 import (
 	"delivery-slot-checker/internal/supermarket"
+	"encoding/json"
 	"log"
 )
 
@@ -37,4 +38,6 @@ func main() {
 		manifest.GetFirstDate().Format("Mon 2 Jan"),
 		manifest.GetLastDate().Format("Mon 2 Jan"),
 	)
+
+	data, _ := json.Marshal(manifest); log.Println(string(data))
 }

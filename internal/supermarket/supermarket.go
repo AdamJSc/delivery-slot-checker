@@ -1,6 +1,8 @@
 package supermarket
 
 import (
+	"encoding/json"
+	"fmt"
 	"sort"
 	"time"
 )
@@ -27,7 +29,30 @@ type DailySchedule struct {
 
 type AvailabilityManifest struct {
 	Chain          string
+	Created        time.Time
 	DailySchedules []DailySchedule
+}
+
+func (m AvailabilityManifest) MarshalJSON() ([]byte, error) {
+	simplified := struct {
+		Chain    string              `json:"chain"`
+		Created  string              `json:"created"`
+		Schedule map[string][]string `json:"schedule"`
+	}{
+		Chain:    m.Chain,
+		Created:  m.Created.Format("3:04pm on Mon 2 Jan"),
+		Schedule: make(map[string][]string),
+	}
+
+	for idx, schedule := range m.DailySchedules {
+		key := fmt.Sprintf("%02d_%s", idx + 1, schedule.Date.Format("Mon 2 Jan"))
+
+		for _, slot := range schedule.Slots {
+			simplified.Schedule[key] = append(simplified.Schedule[key], slot.GetTime().Format("3:04pm"))
+		}
+	}
+
+	return json.Marshal(simplified)
 }
 
 func (m *AvailabilityManifest) GetSlotCount() int {
@@ -83,7 +108,10 @@ func GetAvailabilityManifestFromSlots(chain string, slots []DeliverySlot) (Avail
 		scheduleMap[yyyymmdd] = schedule
 	}
 
-	manifest := AvailabilityManifest{Chain: chain}
+	manifest := AvailabilityManifest{
+		Chain:   chain,
+		Created: time.Now(),
+	}
 	for _, schedule := range scheduleMap {
 		manifest.DailySchedules = append(manifest.DailySchedules, schedule)
 	}
