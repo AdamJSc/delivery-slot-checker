@@ -18,12 +18,19 @@ func main() {
 		}
 	}
 
-	availableSlots := supermarket.FilterAvailableDeliverySlots(slots)
-	manifest, err := supermarket.GetDeliveryManifestFromSlots(availableSlots)
+	availableSlots := supermarket.FilterDeliverySlotsByAvailable(slots)
+	manifest, err := supermarket.GetAvailabilityManifestFromSlots(client.GetChain(), availableSlots)
 	if err != nil {
 		log.Fatal(err)
 	}
 
+	manifest.SortByDate(true)
+
 	log.Printf("Delivery Manifest:\n%+v\n", manifest)
-	log.Printf("Found %d available slots\n", len(availableSlots))
+	log.Printf(
+		"Found %d available slots, from %s to %s\n",
+		len(availableSlots),
+		manifest.GetFirstDate().Format("Mon 2 Jan"),
+		manifest.GetLastDate().Format("Mon 2 Jan"),
+	)
 }

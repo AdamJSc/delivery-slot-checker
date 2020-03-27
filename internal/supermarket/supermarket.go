@@ -1,6 +1,7 @@
 package supermarket
 
 import (
+	"sort"
 	"time"
 )
 
@@ -9,18 +10,7 @@ type DeliverySlot interface {
 	IsAvailable() bool
 }
 
-type DeliverySchedule struct {
-	Date  time.Time
-	Slots []DeliverySlot
-}
-
-type DeliveryManifest []DeliverySchedule
-
-type Client interface {
-	GetDeliverySlots() ([]DeliverySlot, error)
-}
-
-func FilterAvailableDeliverySlots(slots []DeliverySlot) (filtered []DeliverySlot) {
+func FilterDeliverySlotsByAvailable(slots []DeliverySlot) (filtered []DeliverySlot) {
 	for _, slot := range slots {
 		if slot.IsAvailable() {
 			filtered = append(filtered, slot)
@@ -30,12 +20,45 @@ func FilterAvailableDeliverySlots(slots []DeliverySlot) (filtered []DeliverySlot
 	return filtered
 }
 
-func GetDeliveryManifestFromSlots(slots []DeliverySlot) (DeliveryManifest, error) {
-	scheduleMap := make(map[string]DeliverySchedule)
+type DailySchedule struct {
+	Date  time.Time
+	Slots []DeliverySlot
+}
+
+type AvailabilityManifest struct {
+	Chain          string
+	DailySchedules []DailySchedule
+}
+
+func (m *AvailabilityManifest) SortByDate(asc bool) {
+	sort.Slice(m.DailySchedules, func(i int, j int) bool {
+		return asc == m.DailySchedules[i].Date.Before(m.DailySchedules[j].Date)
+	})
+}
+
+func (m *AvailabilityManifest) GetFirstDate() time.Time {
+	if len(m.DailySchedules) == 0 {
+		return time.Time{}
+	}
+
+	return m.DailySchedules[0].Date
+}
+
+func (m *AvailabilityManifest) GetLastDate() time.Time {
+	schedulesCount := len(m.DailySchedules)
+	if schedulesCount == 0 {
+		return time.Time{}
+	}
+
+	return m.DailySchedules[schedulesCount-1].Date
+}
+
+func GetAvailabilityManifestFromSlots(chain string, slots []DeliverySlot) (AvailabilityManifest, error) {
+	scheduleMap := make(map[string]DailySchedule)
 
 	loc, err := time.LoadLocation("UTC")
 	if err != nil {
-		return DeliveryManifest{}, err
+		return AvailabilityManifest{}, err
 	}
 
 	for _, slot := range slots {
@@ -50,12 +73,17 @@ func GetDeliveryManifestFromSlots(slots []DeliverySlot) (DeliveryManifest, error
 		scheduleMap[yyyymmdd] = schedule
 	}
 
-	var manifest DeliveryManifest
+	manifest := AvailabilityManifest{Chain: chain}
 	for _, schedule := range scheduleMap {
-		manifest = append(manifest, schedule)
+		manifest.DailySchedules = append(manifest.DailySchedules, schedule)
 	}
 
 	return manifest, nil
+}
+
+type Client interface {
+	GetChain() string
+	GetDeliverySlots() ([]DeliverySlot, error)
 }
 
 func NewClient() Client {

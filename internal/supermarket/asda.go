@@ -16,9 +16,13 @@ type AsdaClient struct {
 	Client
 }
 
+func(c AsdaClient) GetChain() string {
+	return "ASDA"
+}
+
 func (c AsdaClient) GetDeliverySlots() ([]DeliverySlot, error) {
 	var (
-		response asdaResponse
+		response asdaAPIResponse
 	)
 
 	contents, err := getDataFromCache("cached_success")
@@ -58,7 +62,7 @@ func (ds AsdaDeliverySlot) GetTime() time.Time {
 	return ds.StartTime
 }
 
-type asdaResponse struct {
+type asdaAPIResponse struct {
 	StatusCode string `json:"statusCode"`
 	Data       struct {
 		SlotDays []struct {
