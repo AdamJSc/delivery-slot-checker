@@ -30,6 +30,16 @@ type AvailabilityManifest struct {
 	DailySchedules []DailySchedule
 }
 
+func (m *AvailabilityManifest) GetSlotCount() int {
+	var count int
+
+	for _, schedule := range m.DailySchedules {
+		count += len(schedule.Slots)
+	}
+
+	return count
+}
+
 func (m *AvailabilityManifest) SortByDate(asc bool) {
 	sort.Slice(m.DailySchedules, func(i int, j int) bool {
 		return asc == m.DailySchedules[i].Date.Before(m.DailySchedules[j].Date)

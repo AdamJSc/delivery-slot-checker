@@ -24,12 +24,16 @@ func main() {
 		log.Fatal(err)
 	}
 
+	if manifest.GetSlotCount() == 0 {
+		log.Fatal("no available slots :(")
+	}
+
 	manifest.SortByDate(true)
 
 	log.Printf("Delivery Manifest:\n%+v\n", manifest)
 	log.Printf(
 		"Found %d available slots, from %s to %s\n",
-		len(availableSlots),
+		manifest.GetSlotCount(),
 		manifest.GetFirstDate().Format("Mon 2 Jan"),
 		manifest.GetLastDate().Format("Mon 2 Jan"),
 	)
