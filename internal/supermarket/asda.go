@@ -54,6 +54,10 @@ func (ds AsdaDeliverySlot) IsAvailable() bool {
 	return ds.Status == asdaStatusAvailable
 }
 
+func (ds AsdaDeliverySlot) GetTime() time.Time {
+	return ds.StartTime
+}
+
 type asdaResponse struct {
 	StatusCode string `json:"statusCode"`
 	Data       struct {
