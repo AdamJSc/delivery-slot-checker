@@ -2,15 +2,31 @@ package work
 
 import (
 	"delivery-slot-checker/internal/apperrors"
-	"log"
+	"fmt"
+	"io"
 	"os"
 	"time"
 )
 
-const minInterval = 600
+const minInterval = 1
+
+// TaskWriter represents a Task-specific writer
+type TaskWriter struct {
+	io.Writer
+	TaskName string
+}
+
+func (w TaskWriter) Write(p []byte) (int, error) {
+	input := string(p)
+	ts := time.Now().Format("2006-01-02 15:04:05")
+
+	value := fmt.Sprintf("%s [%s] %s", ts, w.TaskName, input)
+
+	return w.Writer.Write([]byte(value))
+}
 
 // Task represents the function executed by a Job
-type Task func(l *log.Logger) error
+type Task func(w TaskWriter) error
 
 // Job represents a single unit of work
 type Job struct {
@@ -21,21 +37,21 @@ type Job struct {
 
 // Runner represents a collection of Jobs to execute continuously
 type Runner struct {
-	Logger *log.Logger
+	Writer io.Writer
 	Jobs   []Job
 }
 
 // runJob enables the concurrent execution of a Job
-func runJob(job Job, l *log.Logger, ch chan Job) {
-	prefixedLogger := log.New(l.Writer(), job.Name + ": ", l.Flags())
+func runJob(job Job, w io.Writer, ch chan Job) {
+	taskWriter := &TaskWriter{TaskName: job.Name, Writer: w}
 	defer func() {
-		prefixedLogger = nil
+		taskWriter = nil
 	}()
 
-	err := job.Task(prefixedLogger)
+	err := job.Task(*taskWriter)
 
 	if err != nil {
-		prefixedLogger.Println(err)
+		fmt.Fprintln(taskWriter, err)
 
 		switch err.(type) {
 		case apperrors.FatalError:
@@ -54,14 +70,14 @@ func (r Runner) Run() {
 
 	for _, job := range r.Jobs {
 		if job.Interval < minInterval {
-			r.Logger.Printf("minimum interval %d: interval of %d too short for job '%s'\n", minInterval, job.Interval, job.Name)
+			fmt.Fprintf(r.Writer, "minimum interval %d: interval of %d too short for job '%s'\n", minInterval, job.Interval, job.Name)
 			os.Exit(1)
 		}
 
-		go runJob(job, r.Logger, ch)
+		go runJob(job, r.Writer, ch)
 	}
 
 	for job := range ch {
-		go runJob(job, r.Logger, ch)
+		go runJob(job, r.Writer, ch)
 	}
 }

@@ -3,10 +3,10 @@ package work
 import (
 	"delivery-slot-checker/internal/merchant"
 	"errors"
-	"log"
+	"fmt"
 )
 
-var AsdaCheckDeliverySlotsTask = Task(func(l *log.Logger) error {
+var AsdaCheckDeliverySlotsTask = Task(func(w TaskWriter) error {
 	client := merchant.NewClient()
 
 	slots, err := client.GetDeliverySlots()
@@ -26,7 +26,8 @@ var AsdaCheckDeliverySlotsTask = Task(func(l *log.Logger) error {
 
 	manifest.SortByDate(true)
 
-	l.Printf(
+	fmt.Fprintf(
+		w,
 		"Found %d available slots, from %s to %s\n",
 		manifest.GetSlotCount(),
 		manifest.GetFirstDate().Format("Mon 2 Jan"),
