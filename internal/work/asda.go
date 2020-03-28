@@ -1,21 +1,21 @@
 package work
 
 import (
-	"delivery-slot-checker/internal/supermarket"
+	"delivery-slot-checker/internal/merchant"
 	"errors"
 	"log"
 )
 
 var AsdaCheckDeliverySlotsTask = Task(func(l *log.Logger) error {
-	client := supermarket.NewClient()
+	client := merchant.NewClient()
 
 	slots, err := client.GetDeliverySlots()
 	if err != nil {
 		return err
 	}
 
-	availableSlots := supermarket.FilterDeliverySlotsByAvailable(slots)
-	manifest, err := supermarket.GetAvailabilityManifestFromSlots(client.GetChain(), availableSlots)
+	availableSlots := merchant.FilterDeliverySlotsByAvailability(slots, true)
+	manifest, err := merchant.GetAvailabilityManifestFromSlots(client.GetName(), availableSlots)
 	if err != nil {
 		return err
 	}

@@ -1,4 +1,4 @@
-package supermarket
+package merchant
 
 import (
 	"encoding/json"
@@ -7,14 +7,16 @@ import (
 	"time"
 )
 
+// DeliverySlot represents a single delivery slot
 type DeliverySlot interface {
 	GetTime() time.Time
 	IsAvailable() bool
 }
 
-func FilterDeliverySlotsByAvailable(slots []DeliverySlot) (filtered []DeliverySlot) {
+// FilterDeliverySlotsByAvailability returns only those DeliverySlots within a slice that match the provided availability
+func FilterDeliverySlotsByAvailability(slots []DeliverySlot, isAvailable bool) (filtered []DeliverySlot) {
 	for _, slot := range slots {
-		if slot.IsAvailable() {
+		if slot.IsAvailable() == isAvailable {
 			filtered = append(filtered, slot)
 		}
 	}
@@ -22,30 +24,32 @@ func FilterDeliverySlotsByAvailable(slots []DeliverySlot) (filtered []DeliverySl
 	return filtered
 }
 
+// DailySchedule represents a collection of DeliverySlots that pertain to the same single day
 type DailySchedule struct {
 	Date  time.Time
 	Slots []DeliverySlot
 }
 
+// AvailabilityManifest represents a series of DailySchedules
 type AvailabilityManifest struct {
-	Chain          string
+	MerchantName   string
 	Created        time.Time
 	DailySchedules []DailySchedule
 }
 
 func (m AvailabilityManifest) MarshalJSON() ([]byte, error) {
 	simplified := struct {
-		Chain    string              `json:"chain"`
+		Merchant string              `json:"merchant"`
 		Created  string              `json:"created"`
 		Schedule map[string][]string `json:"schedule"`
 	}{
-		Chain:    m.Chain,
+		Merchant: m.MerchantName,
 		Created:  m.Created.Format("3:04pm on Mon 2 Jan"),
 		Schedule: make(map[string][]string),
 	}
 
 	for idx, schedule := range m.DailySchedules {
-		key := fmt.Sprintf("%02d_%s", idx + 1, schedule.Date.Format("Mon 2 Jan"))
+		key := fmt.Sprintf("%02d_%s", idx+1, schedule.Date.Format("Mon 2 Jan"))
 
 		for _, slot := range schedule.Slots {
 			simplified.Schedule[key] = append(simplified.Schedule[key], slot.GetTime().Format("3:04pm"))
@@ -55,6 +59,7 @@ func (m AvailabilityManifest) MarshalJSON() ([]byte, error) {
 	return json.Marshal(simplified)
 }
 
+// GetSlotCount returns the total number of slots across all DailySchedules
 func (m *AvailabilityManifest) GetSlotCount() int {
 	var count int
 
@@ -65,12 +70,14 @@ func (m *AvailabilityManifest) GetSlotCount() int {
 	return count
 }
 
+// SortByDate orders all DailySchedules ascending by date if asc is true, otherwise descending
 func (m *AvailabilityManifest) SortByDate(asc bool) {
 	sort.Slice(m.DailySchedules, func(i int, j int) bool {
 		return asc == m.DailySchedules[i].Date.Before(m.DailySchedules[j].Date)
 	})
 }
 
+// GetFirstDate returns the date of the first DailySchedule in an AvailabilityManifest
 func (m *AvailabilityManifest) GetFirstDate() time.Time {
 	if len(m.DailySchedules) == 0 {
 		return time.Time{}
@@ -79,6 +86,7 @@ func (m *AvailabilityManifest) GetFirstDate() time.Time {
 	return m.DailySchedules[0].Date
 }
 
+// GetLastDate returns the date of the last DailySchedule in an AvailabilityManifest
 func (m *AvailabilityManifest) GetLastDate() time.Time {
 	schedulesCount := len(m.DailySchedules)
 	if schedulesCount == 0 {
@@ -88,7 +96,7 @@ func (m *AvailabilityManifest) GetLastDate() time.Time {
 	return m.DailySchedules[schedulesCount-1].Date
 }
 
-func GetAvailabilityManifestFromSlots(chain string, slots []DeliverySlot) (AvailabilityManifest, error) {
+func GetAvailabilityManifestFromSlots(merchantName string, slots []DeliverySlot) (AvailabilityManifest, error) {
 	scheduleMap := make(map[string]DailySchedule)
 
 	loc, err := time.LoadLocation("UTC")
@@ -109,8 +117,8 @@ func GetAvailabilityManifestFromSlots(chain string, slots []DeliverySlot) (Avail
 	}
 
 	manifest := AvailabilityManifest{
-		Chain:   chain,
-		Created: time.Now(),
+		MerchantName: merchantName,
+		Created:      time.Now(),
 	}
 	for _, schedule := range scheduleMap {
 		manifest.DailySchedules = append(manifest.DailySchedules, schedule)
@@ -119,11 +127,13 @@ func GetAvailabilityManifestFromSlots(chain string, slots []DeliverySlot) (Avail
 	return manifest, nil
 }
 
+// Client represents a single merchant
 type Client interface {
-	GetChain() string
+	GetName() string
 	GetDeliverySlots() ([]DeliverySlot, error)
 }
 
+// NewClient returns the default merchant AsdaClient
 func NewClient() Client {
 	return AsdaClient{}
 }

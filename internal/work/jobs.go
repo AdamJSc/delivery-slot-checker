@@ -9,19 +9,23 @@ import (
 
 const minInterval = 600
 
+// Task represents the function executed by a Job
 type Task func(l *log.Logger) error
 
+// Job represents a single unit of work
 type Job struct {
 	Name     string
 	Task     Task
 	Interval time.Duration
 }
 
+// Runner represents a collection of Jobs to execute continuously
 type Runner struct {
 	Logger *log.Logger
 	Jobs   []Job
 }
 
+// runJob enables the concurrent execution of a Job
 func runJob(job Job, l *log.Logger, ch chan Job) {
 	prefixedLogger := log.New(l.Writer(), job.Name + ": ", l.Flags())
 	defer func() {
@@ -44,6 +48,7 @@ func runJob(job Job, l *log.Logger, ch chan Job) {
 	ch <- job
 }
 
+// Run executes all Jobs that belong to the Runner
 func (r Runner) Run() {
 	ch := make(chan Job)
 

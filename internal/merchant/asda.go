@@ -1,4 +1,4 @@
-package supermarket
+package merchant
 
 import (
 	"delivery-slot-checker/internal/apperrors"
@@ -17,8 +17,8 @@ type AsdaClient struct {
 	Client
 }
 
-func(c AsdaClient) GetChain() string {
-	return "ASDA"
+func(c AsdaClient) GetName() string {
+	return "Asda"
 }
 
 func (c AsdaClient) GetDeliverySlots() ([]DeliverySlot, error) {
@@ -36,7 +36,7 @@ func (c AsdaClient) GetDeliverySlots() ([]DeliverySlot, error) {
 	}
 
 	if response.StatusCode == asdaStatusUnavailable {
-		return []DeliverySlot{}, apperrors.OfflineError(c.GetChain())
+		return []DeliverySlot{}, apperrors.OfflineError(c.GetName())
 	}
 
 	var slots []DeliverySlot
