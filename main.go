@@ -9,7 +9,7 @@ func main() {
 	asdaCheckDeliverySlotsJob := work.Job{
 		Name:     "asda-check-delivery-slots-job",
 		Task:     work.AsdaCheckDeliverySlotsTask,
-		Interval: 3,
+		Interval: 600,
 	}
 
 	runner := work.Runner{

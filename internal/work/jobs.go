@@ -5,10 +5,11 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"strings"
 	"time"
 )
 
-const minInterval = 1
+const minInterval = 600
 
 // TaskWriter represents a Task-specific writer
 type TaskWriter struct {
@@ -16,11 +17,16 @@ type TaskWriter struct {
 	TaskName string
 }
 
+func (w TaskWriter) GetFormattedTaskName() string {
+	lcase := strings.ToLower(w.TaskName)
+	return strings.Replace(lcase, " ", "-", -1)
+}
+
 func (w TaskWriter) Write(p []byte) (int, error) {
 	input := string(p)
 	ts := time.Now().Format("2006-01-02 15:04:05")
 
-	value := fmt.Sprintf("%s [%s] %s", ts, w.TaskName, input)
+	value := fmt.Sprintf("%s [%s] %s", ts, w.GetFormattedTaskName(), input)
 
 	return w.Writer.Write([]byte(value))
 }
