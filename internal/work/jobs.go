@@ -22,7 +22,7 @@ type Runner struct {
 	Jobs   []Job
 }
 
-func runJob(job Job, l *log.Logger) {
+func runJob(job Job, l *log.Logger, ch chan Job) {
 	prefixedLogger := log.New(l.Writer(), job.Name + ": ", l.Flags())
 	defer func() {
 		prefixedLogger = nil
@@ -40,16 +40,23 @@ func runJob(job Job, l *log.Logger) {
 	}
 
 	time.Sleep(job.Interval * time.Second)
-	runJob(job, l)
+
+	ch <- job
 }
 
 func (r Runner) Run() {
+	ch := make(chan Job)
+
 	for _, job := range r.Jobs {
 		if job.Interval < minInterval {
 			r.Logger.Printf("minimum interval %d: interval of %d too short for job '%s'\n", minInterval, job.Interval, job.Name)
 			os.Exit(1)
 		}
 
-		runJob(job, r.Logger)
+		go runJob(job, r.Logger, ch)
+	}
+
+	for job := range ch {
+		go runJob(job, r.Logger, ch)
 	}
 }

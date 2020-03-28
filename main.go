@@ -13,10 +13,12 @@ func main() {
 		Interval: 600,
 	}
 
-	work.Runner{
+	runner := work.Runner{
 		Logger: log.New(os.Stdout, "", log.LstdFlags),
 		Jobs: []work.Job{
 			asdaCheckDeliverySlotsJob,
 		},
-	}.Run()
+	}
+
+	runner.Run()
 }
