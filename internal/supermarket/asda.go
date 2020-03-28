@@ -1,6 +1,7 @@
 package supermarket
 
 import (
+	"delivery-slot-checker/internal/apperrors"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
@@ -27,7 +28,7 @@ func (c AsdaClient) GetDeliverySlots() ([]DeliverySlot, error) {
 
 	contents, err := getDataFromCache("cached_success")
 	if err != nil {
-		return []DeliverySlot{}, err
+		return []DeliverySlot{}, apperrors.FatalError{Err: err}
 	}
 
 	if err = json.Unmarshal(contents, &response); err != nil {
@@ -35,7 +36,7 @@ func (c AsdaClient) GetDeliverySlots() ([]DeliverySlot, error) {
 	}
 
 	if response.StatusCode == asdaStatusUnavailable {
-		return []DeliverySlot{}, ServiceUnavailableError{}
+		return []DeliverySlot{}, apperrors.OfflineError(c.GetChain())
 	}
 
 	var slots []DeliverySlot

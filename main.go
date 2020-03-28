@@ -1,48 +1,22 @@
 package main
 
 import (
-	"delivery-slot-checker/internal/supermarket"
-	"encoding/base64"
-	"encoding/json"
+	"delivery-slot-checker/internal/work"
 	"log"
+	"os"
 )
 
 func main() {
-	client := supermarket.NewClient()
-
-	slots, err := client.GetDeliverySlots()
-	if err != nil {
-		switch err.(type) {
-		case supermarket.ServiceUnavailableError:
-			log.Fatal(err)
-		default:
-			log.Fatalf("unexpected error: %s", err)
-		}
+	asdaCheckDeliverySlotsJob := work.Job{
+		Name:     "asda-check-delivery-slots-job",
+		Task:     work.AsdaCheckDeliverySlotsTask,
+		Interval: 600,
 	}
 
-	availableSlots := supermarket.FilterDeliverySlotsByAvailable(slots)
-	manifest, err := supermarket.GetAvailabilityManifestFromSlots(client.GetChain(), availableSlots)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	if manifest.GetSlotCount() == 0 {
-		log.Fatal("no available slots :(")
-	}
-
-	manifest.SortByDate(true)
-
-	log.Printf("Delivery Manifest:\n%+v\n", manifest)
-	log.Printf(
-		"Found %d available slots, from %s to %s\n",
-		manifest.GetSlotCount(),
-		manifest.GetFirstDate().Format("Mon 2 Jan"),
-		manifest.GetLastDate().Format("Mon 2 Jan"),
-	)
-
-	data, _ := json.Marshal(manifest)
-	log.Println(string(data))
-
-	encoded := base64.URLEncoding.EncodeToString(data)
-	log.Println(encoded)
+	work.Runner{
+		Logger: log.New(os.Stdout, "", log.LstdFlags),
+		Jobs: []work.Job{
+			asdaCheckDeliverySlotsJob,
+		},
+	}.Run()
 }
