@@ -7,21 +7,10 @@ import (
 	"time"
 )
 
-var AsdaCheckDeliverySlotsTask = Task(func(w TaskWriter) error {
-	now := time.Now()
-	stateName := fmt.Sprintf("%s_%s", w.GetFormattedTaskName(), now.Format("20060102"))
-
-	state, err := LoadStateAndCreateIfMissing(stateName)
-	if err != nil {
-		return err
-	}
-
-	state.LatestRun = now
+var AsdaCheckDeliverySlotsTask = Task(func(state *JobState, w WriterWithIdentifier) error {
+	state.LatestRun = time.Now()
 
 	if state.Bypass == true {
-		if err = SaveState(stateName, state); err != nil {
-			return err
-		}
 		return errors.New("bypassing job...")
 	}
 
@@ -52,10 +41,7 @@ var AsdaCheckDeliverySlotsTask = Task(func(w TaskWriter) error {
 		manifest.GetLastDate().Format("Mon 2 Jan"),
 	)
 
-	err = SaveState(stateName, state)
-	if err != nil {
-		return err
-	}
+	state.Bypass = true
 
 	return nil
 })

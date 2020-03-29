@@ -1,7 +1,6 @@
 package work
 
 import (
-	"delivery-slot-checker/internal/apperrors"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
@@ -11,6 +10,7 @@ import (
 
 const stateDir = "./data/jobstate"
 
+// JobState represents the latest state of our job
 type JobState struct {
 	Bypass    bool      `json:"bypass"`
 	Status    string    `json:"status"`
@@ -18,8 +18,9 @@ type JobState struct {
 	FirstRun  time.Time `json:"first_run"`
 }
 
+// LoadState reads job state from disk
 func LoadState(name string) (JobState, error) {
-	contents, err := ioutil.ReadFile(getStateFullPath(name))
+	contents, err := ioutil.ReadFile(getFullPathToStateFile(name))
 	if err != nil {
 		return JobState{}, err
 	}
@@ -33,21 +34,23 @@ func LoadState(name string) (JobState, error) {
 	return jobState, err
 }
 
+// SaveState stores job state on disk
 func SaveState(name string, state JobState) error {
 	err := os.MkdirAll(stateDir, 0755)
 	if err != nil {
-		return apperrors.FatalError{Err: err}
+		return err
 	}
 
 	data, err := json.Marshal(state)
 	if err != nil {
-		return apperrors.FatalError{Err: err}
+		return err
 	}
 
-	return ioutil.WriteFile(getStateFullPath(name), data, 0755)
+	return ioutil.WriteFile(getFullPathToStateFile(name), data, 0755)
 }
 
-func LoadStateAndCreateIfMissing(name string) (JobState, error) {
+// LoadStateCreateIfMissing will attempt to load state from disk, or create if not existing
+func LoadStateCreateIfMissing(name string) (JobState, error) {
 	state, err := LoadState(name)
 
 	if err != nil {
@@ -64,6 +67,7 @@ func LoadStateAndCreateIfMissing(name string) (JobState, error) {
 	return state, nil
 }
 
-func getStateFullPath(filename string) string {
-	return fmt.Sprintf("%s/%s.txt", stateDir, filename)
+// getFullPathToStateFile gets full path to state file from name
+func getFullPathToStateFile(name string) string {
+	return fmt.Sprintf("%s/%s.txt", stateDir, name)
 }
