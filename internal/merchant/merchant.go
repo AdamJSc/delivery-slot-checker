@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"sort"
+	"strings"
 	"time"
 )
 
@@ -37,9 +38,25 @@ type AvailabilityManifest struct {
 	DailySchedules []DailySchedule
 }
 
-// AsMessageBody renders object as a string to be sent as a message
+// AsMessageText renders object as a string to be sent as a message
 func (m AvailabilityManifest) AsMessageText(name string) string {
-	return fmt.Sprintf("Hey %s!\nWant to know what slots are available?\nI can tell you!", name)
+	from := m.GetFirstDate()
+	to := m.GetLastDate()
+	dateRange := int(to.Sub(from).Hours() / 24)
+
+	var summaries []string
+	for _, schedule := range m.DailySchedules {
+		summaries = append(summaries, fmt.Sprintf("%s (%d)", schedule.Date.Format("Mon 2"), len(schedule.Slots)))
+	}
+
+	return fmt.Sprintf(
+		"Hi %s, %s slots next %d days as at %s: %s",
+		name,
+		m.MerchantName,
+		dateRange,
+		time.Now().Format("3:04pm"),
+		strings.Join(summaries, ", "),
+	)
 }
 
 func (m AvailabilityManifest) MarshalJSON() ([]byte, error) {
