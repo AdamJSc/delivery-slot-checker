@@ -75,7 +75,7 @@ type asdaAPIResponse struct {
 }
 
 func getDataFromCache(filename string) ([]byte, error) {
-	data, err := ioutil.ReadFile(fmt.Sprintf("./data/%s.txt", filename))
+	data, err := ioutil.ReadFile(fmt.Sprintf("./data/cache/%s.txt", filename))
 	if err != nil {
 		return []byte{}, err
 	}

@@ -1,2 +1,6 @@
+.env
 .idea/
-data/*
+data/tasks/asda-check-delivery-slots.yml
+data/cache/*
+data/jobstate/*
+vendor/

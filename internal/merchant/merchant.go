@@ -37,6 +37,11 @@ type AvailabilityManifest struct {
 	DailySchedules []DailySchedule
 }
 
+// AsMessageBody renders object as a string to be sent as a message
+func (m AvailabilityManifest) AsMessageText(name string) string {
+	return fmt.Sprintf("Hey %s!\nWant to know what slots are available?\nI can tell you!", name)
+}
+
 func (m AvailabilityManifest) MarshalJSON() ([]byte, error) {
 	simplified := struct {
 		Merchant string              `json:"merchant"`
@@ -133,7 +138,7 @@ type Client interface {
 	GetDeliverySlots() ([]DeliverySlot, error)
 }
 
-// NewClient returns the default merchant AsdaClient
+// NewClient instantiates the default Client
 func NewClient() Client {
 	return AsdaClient{}
 }
