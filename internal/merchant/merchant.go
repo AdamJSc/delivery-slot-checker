@@ -14,39 +14,30 @@ type DeliverySlot interface {
 	IsAvailable() bool
 }
 
-// FilterDeliverySlotsByAvailability returns only those DeliverySlots within a slice that match the provided availability
-func FilterDeliverySlotsByAvailability(slots []DeliverySlot, isAvailable bool) (filtered []DeliverySlot) {
-	for _, slot := range slots {
-		if slot.IsAvailable() == isAvailable {
-			filtered = append(filtered, slot)
-		}
-	}
-
-	return filtered
-}
-
 // DailySchedule represents a collection of DeliverySlots that pertain to the same single day
 type DailySchedule struct {
 	Date  time.Time
 	Slots []DeliverySlot
 }
 
-// AvailabilityManifest represents a series of DailySchedules
-type AvailabilityManifest struct {
+// DeliveryManifest represents a series of DailySchedules
+type DeliveryManifest struct {
 	MerchantName   string
-	Created        time.Time
+	From           time.Time
+	Until          time.Time
 	DailySchedules []DailySchedule
+	Created        time.Time
 }
 
 // AsMessageText renders object as a string to be sent as a message
-func (m AvailabilityManifest) AsMessageText(name string) string {
+func (m DeliveryManifest) AsMessageText(name string) string {
 	var summaries []string
 	for _, schedule := range m.DailySchedules {
 		summaries = append(summaries, fmt.Sprintf("%s (%d)", schedule.Date.Format("Mon 2"), len(schedule.Slots)))
 	}
 
 	return fmt.Sprintf(
-		"Hi %s, %s slots next 21 days as at %s: %s",
+		"Hi %s, %s forthcoming slots as at %s: %s",
 		name,
 		m.MerchantName,
 		time.Now().Format("3:04pm"),
@@ -54,7 +45,7 @@ func (m AvailabilityManifest) AsMessageText(name string) string {
 	)
 }
 
-func (m AvailabilityManifest) MarshalJSON() ([]byte, error) {
+func (m DeliveryManifest) MarshalJSON() ([]byte, error) {
 	simplified := struct {
 		Merchant string              `json:"merchant"`
 		Created  string              `json:"created"`
@@ -77,7 +68,7 @@ func (m AvailabilityManifest) MarshalJSON() ([]byte, error) {
 }
 
 // GetSlotCount returns the total number of slots across all DailySchedules
-func (m *AvailabilityManifest) GetSlotCount() int {
+func (m DeliveryManifest) GetSlotCount() int {
 	var count int
 
 	for _, schedule := range m.DailySchedules {
@@ -88,32 +79,40 @@ func (m *AvailabilityManifest) GetSlotCount() int {
 }
 
 // SortByDate orders all DailySchedules ascending by date if asc is true, otherwise descending
-func (m *AvailabilityManifest) SortByDate(asc bool) {
+func (m DeliveryManifest) SortByDate(asc bool) {
 	sort.Slice(m.DailySchedules, func(i int, j int) bool {
 		return asc == m.DailySchedules[i].Date.Before(m.DailySchedules[j].Date)
 	})
 }
 
-// GetFirstDate returns the date of the first DailySchedule in an AvailabilityManifest
-func (m *AvailabilityManifest) GetFirstDate() time.Time {
-	if len(m.DailySchedules) == 0 {
-		return time.Time{}
+// FilterByAvailability removes all slots from all daily schedules whose availability does not match the provided flag
+func (m *DeliveryManifest) FilterByAvailability(isAvailable bool) {
+	filteredManifest := DeliveryManifest{
+		MerchantName:   m.MerchantName,
+		From:           m.From,
+		Until:          m.Until,
+		DailySchedules: nil,
+		Created:        m.Created,
 	}
 
-	return m.DailySchedules[0].Date
-}
+	for _, schedule := range m.DailySchedules {
+		filteredSchedule := DailySchedule{
+			Date: schedule.Date,
+		}
 
-// GetLastDate returns the date of the last DailySchedule in an AvailabilityManifest
-func (m *AvailabilityManifest) GetLastDate() time.Time {
-	schedulesCount := len(m.DailySchedules)
-	if schedulesCount == 0 {
-		return time.Time{}
+		for _, slot := range schedule.Slots {
+			if slot.IsAvailable() == isAvailable {
+				filteredSchedule.Slots = append(filteredSchedule.Slots, slot)
+			}
+		}
+
+		filteredManifest.DailySchedules = append(filteredManifest.DailySchedules, filteredSchedule)
 	}
 
-	return m.DailySchedules[schedulesCount-1].Date
+	*m = filteredManifest
 }
 
-func GetAvailabilityManifestFromSlots(merchantName string, slots []DeliverySlot) (AvailabilityManifest, error) {
+func NewDeliveryManifest(merchantName string, slots []DeliverySlot) (DeliveryManifest, error) {
 	scheduleMap := make(map[string]DailySchedule)
 
 	for _, slot := range slots {
@@ -124,7 +123,7 @@ func GetAvailabilityManifestFromSlots(merchantName string, slots []DeliverySlot)
 
 		slotDateAtMidnight, err := time.Parse("20060102", yyyymmdd)
 		if err != nil {
-			return AvailabilityManifest{}, err
+			return DeliveryManifest{}, err
 		}
 		schedule.Date = slotDateAtMidnight
 		schedule.Slots = append(schedule.Slots, slot)
@@ -132,12 +131,18 @@ func GetAvailabilityManifestFromSlots(merchantName string, slots []DeliverySlot)
 		scheduleMap[yyyymmdd] = schedule
 	}
 
-	manifest := AvailabilityManifest{
+	manifest := DeliveryManifest{
 		MerchantName: merchantName,
 		Created:      time.Now(),
 	}
 	for _, schedule := range scheduleMap {
 		manifest.DailySchedules = append(manifest.DailySchedules, schedule)
+	}
+
+	count := len(manifest.DailySchedules)
+	if count > 0 {
+		manifest.From = manifest.DailySchedules[0].Date
+		manifest.Until = manifest.DailySchedules[count-1].Date
 	}
 
 	return manifest, nil
@@ -152,6 +157,6 @@ type Client interface {
 // NewClient instantiates the default Client
 func NewClient() Client {
 	return AsdaClient{
-		URL: "https://groceries.asda.com/api/v3/",
+		URL: "https://groceries.asda.com/api/v3",
 	}
 }

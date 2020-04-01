@@ -69,8 +69,8 @@ func checkForDeliverySlots(data checkDeliverySlotsTaskData, state *JobState, w W
 		return err
 	}
 
-	availableSlots := merchant.FilterDeliverySlotsByAvailability(slots, true)
-	manifest, err := merchant.GetAvailabilityManifestFromSlots(client.GetName(), availableSlots)
+	manifest, err := merchant.NewDeliveryManifest(client.GetName(), slots)
+	manifest.FilterByAvailability(true)
 	if err != nil {
 		return err
 	}
@@ -81,14 +81,14 @@ func checkForDeliverySlots(data checkDeliverySlotsTaskData, state *JobState, w W
 
 	manifest.SortByDate(true)
 
-	from := manifest.GetFirstDate().Format("Mon 2 Jan")
-	to := manifest.GetLastDate().Format("Mon 2 Jan")
+	from := manifest.From.Format("Mon 2 Jan")
+	until := manifest.Until.Format("Mon 2 Jan")
 	fmt.Fprintf(
 		w,
-		"found %d available slots, from %s to %s\n",
+		"found %d available slots, from %s until %s\n",
 		manifest.GetSlotCount(),
 		strings.ToLower(from),
-		strings.ToLower(to),
+		strings.ToLower(until),
 	)
 
 	transporter := transport.NewTransporter()
