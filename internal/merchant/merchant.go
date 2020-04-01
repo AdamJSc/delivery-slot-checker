@@ -40,20 +40,15 @@ type AvailabilityManifest struct {
 
 // AsMessageText renders object as a string to be sent as a message
 func (m AvailabilityManifest) AsMessageText(name string) string {
-	from := m.GetFirstDate()
-	to := m.GetLastDate()
-	dateRange := int(to.Sub(from).Hours() / 24)
-
 	var summaries []string
 	for _, schedule := range m.DailySchedules {
 		summaries = append(summaries, fmt.Sprintf("%s (%d)", schedule.Date.Format("Mon 2"), len(schedule.Slots)))
 	}
 
 	return fmt.Sprintf(
-		"Hi %s, %s slots next %d days as at %s: %s",
+		"Hi %s, %s slots next 21 days as at %s: %s",
 		name,
 		m.MerchantName,
-		dateRange,
 		time.Now().Format("3:04pm"),
 		strings.Join(summaries, ", "),
 	)

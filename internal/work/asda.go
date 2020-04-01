@@ -12,6 +12,14 @@ import (
 	"time"
 )
 
+type checkDeliverySlotsTaskData struct {
+	Postcode   string `yaml:"postcode"`
+	Recipients []struct {
+		Name   string `yaml:"name"`
+		Mobile string `yaml:"mobile"`
+	} `yaml:"recipients"`
+}
+
 var AsdaCheckDeliverySlotsTask = Task(func(state *JobState, w WriterWithIdentifier) error {
 	state.LatestRun = time.Now()
 
@@ -25,20 +33,25 @@ var AsdaCheckDeliverySlotsTask = Task(func(state *JobState, w WriterWithIdentifi
 		return apperrors.FatalError{Err: err}
 	}
 
-	var taskData struct {
-		Recipients []struct {
-			Name   string `yaml:"name"`
-			Mobile string `yaml:"mobile"`
-		} `yaml:"recipients"`
-	}
+	var taskData []checkDeliverySlotsTaskData
 
 	err = yaml.Unmarshal(taskDataFileContents, &taskData)
 	if err != nil {
 		return apperrors.FatalError{Err: err}
 	}
 
-	// begin task...
+	// begin tasks...
+	for _, data := range taskData {
+		err = checkForDeliverySlots(data, state, w)
+		if err != nil {
+			return err
+		}
+	}
 
+	return nil
+})
+
+func checkForDeliverySlots(data checkDeliverySlotsTaskData, state *JobState, w WriterWithIdentifier) error {
 	client := merchant.NewClient()
 
 	now := time.Now()
@@ -51,7 +64,7 @@ var AsdaCheckDeliverySlotsTask = Task(func(state *JobState, w WriterWithIdentifi
 	tsInSevenDays := todayAtMidnight.Add(7 * 24 * time.Hour)
 	tsInTwentyOneDays := todayAtMidnight.Add(22 * 24 * time.Hour).Add(-time.Second)
 
-	slots, err := client.GetDeliverySlots("AB120AB", tsInSevenDays, tsInTwentyOneDays)
+	slots, err := client.GetDeliverySlots(data.Postcode, tsInSevenDays, tsInTwentyOneDays)
 	if err != nil {
 		return err
 	}
@@ -79,7 +92,7 @@ var AsdaCheckDeliverySlotsTask = Task(func(state *JobState, w WriterWithIdentifi
 	)
 
 	transporter := transport.NewTransporter()
-	for _, recipient := range taskData.Recipients {
+	for _, recipient := range data.Recipients {
 		message := transport.Message{
 			From: "SlotChecker",
 			To:   recipient.Mobile,
@@ -94,4 +107,4 @@ var AsdaCheckDeliverySlotsTask = Task(func(state *JobState, w WriterWithIdentifi
 	state.Bypass = true
 
 	return nil
-})
+}
