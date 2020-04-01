@@ -1,10 +1,12 @@
 package merchant
 
 import (
+	"bytes"
 	"delivery-slot-checker/internal/apperrors"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
+	"net/http"
 	"time"
 )
 
@@ -15,23 +17,36 @@ const (
 
 type AsdaClient struct {
 	Client
+	URL string
 }
 
-func(c AsdaClient) GetName() string {
+func (c AsdaClient) GetName() string {
 	return "Asda"
 }
 
-func (c AsdaClient) GetDeliverySlots() ([]DeliverySlot, error) {
-	var (
-		response asdaAPIResponse
-	)
+func (c AsdaClient) GetDeliverySlots(postcode string, from, to time.Time) ([]DeliverySlot, error) {
+	var response asdaAPIResponse
 
-	contents, err := getDataFromCache("cached_success")
+	httpRequestBody, err := json.Marshal(newAsdaAPIRequest(postcode, from, to))
 	if err != nil {
 		return []DeliverySlot{}, apperrors.FatalError{Err: err}
 	}
 
-	if err = json.Unmarshal(contents, &response); err != nil {
+	httpResponse, err := http.Post(
+		fmt.Sprintf("%s/slot/view", c.URL),
+		"application/json",
+		bytes.NewReader(httpRequestBody),
+	)
+	if err != nil {
+		return []DeliverySlot{}, err
+	}
+
+	httpResponseBody, err := ioutil.ReadAll(httpResponse.Body)
+	if err != nil {
+		return []DeliverySlot{}, apperrors.FatalError{Err: err}
+	}
+
+	if err = json.Unmarshal(httpResponseBody, &response); err != nil {
 		return []DeliverySlot{}, err
 	}
 
@@ -74,11 +89,34 @@ type asdaAPIResponse struct {
 	} `json:"data"`
 }
 
-func getDataFromCache(filename string) ([]byte, error) {
-	data, err := ioutil.ReadFile(fmt.Sprintf("./data/cache/%s.txt", filename))
-	if err != nil {
-		return []byte{}, err
-	}
+type asdaAPIRequest struct {
+	Data struct {
+		ServiceInfo struct {
+			FulfillmentType string `json:"fulfillment_type"`
+		} `json:"service_info"`
+		StartDate      time.Time `json:"start_date"`
+		EndDate        time.Time `json:"end_date"`
+		ServiceAddress struct {
+			Postcode string `json:"postcode"`
+		} `json:"service_address"`
+		CustomerInfo struct {
+			AccountID string `json:"account_id"`
+		} `json:"customer_info"`
+		OrderInfo struct {
+			OrderID string `json:"order_id"`
+		} `json:"order_info"`
+	} `json:"data"`
+}
 
-	return data, nil
+func newAsdaAPIRequest(postcode string, start, end time.Time) asdaAPIRequest {
+	var request asdaAPIRequest
+
+	request.Data.ServiceInfo.FulfillmentType = "DELIVERY"
+	request.Data.StartDate = start
+	request.Data.EndDate = end
+	request.Data.ServiceAddress.Postcode = postcode
+	request.Data.CustomerInfo.AccountID = "0"
+	request.Data.OrderInfo.OrderID = "0"
+
+	return request
 }

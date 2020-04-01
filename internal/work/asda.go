@@ -41,7 +41,17 @@ var AsdaCheckDeliverySlotsTask = Task(func(state *JobState, w WriterWithIdentifi
 
 	client := merchant.NewClient()
 
-	slots, err := client.GetDeliverySlots()
+	now := time.Now()
+	loc, err := time.LoadLocation("Europe/London")
+	if err != nil {
+		return apperrors.FatalError{Err: err}
+	}
+
+	todayAtMidnight := time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, loc)
+	tsInSevenDays := todayAtMidnight.Add(7 * 24 * time.Hour)
+	tsInTwentyOneDays := todayAtMidnight.Add(22 * 24 * time.Hour).Add(-time.Second)
+
+	slots, err := client.GetDeliverySlots("AB120AB", tsInSevenDays, tsInTwentyOneDays)
 	if err != nil {
 		return err
 	}

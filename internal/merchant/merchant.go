@@ -121,18 +121,17 @@ func (m *AvailabilityManifest) GetLastDate() time.Time {
 func GetAvailabilityManifestFromSlots(merchantName string, slots []DeliverySlot) (AvailabilityManifest, error) {
 	scheduleMap := make(map[string]DailySchedule)
 
-	loc, err := time.LoadLocation("UTC")
-	if err != nil {
-		return AvailabilityManifest{}, err
-	}
-
 	for _, slot := range slots {
 		ts := slot.GetTime()
 		yyyymmdd := ts.Format("20060102")
 
 		schedule := scheduleMap[yyyymmdd]
 
-		schedule.Date = time.Date(ts.Year(), ts.Month(), ts.Day(), 0, 0, 0, 0, loc)
+		slotDateAtMidnight, err := time.Parse("20060102", yyyymmdd)
+		if err != nil {
+			return AvailabilityManifest{}, err
+		}
+		schedule.Date = slotDateAtMidnight
 		schedule.Slots = append(schedule.Slots, slot)
 
 		scheduleMap[yyyymmdd] = schedule
@@ -152,10 +151,12 @@ func GetAvailabilityManifestFromSlots(merchantName string, slots []DeliverySlot)
 // Client represents a single merchant
 type Client interface {
 	GetName() string
-	GetDeliverySlots() ([]DeliverySlot, error)
+	GetDeliverySlots(locationID string, from, to time.Time) ([]DeliverySlot, error)
 }
 
 // NewClient instantiates the default Client
 func NewClient() Client {
-	return AsdaClient{}
+	return AsdaClient{
+		URL: "https://groceries.asda.com/api/v3/",
+	}
 }
