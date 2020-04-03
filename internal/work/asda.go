@@ -70,10 +70,10 @@ func checkForDeliverySlots(data checkDeliverySlotsTaskData, state *JobState, w W
 	}
 
 	manifest, err := merchant.NewDeliveryManifest(client.GetName(), slots)
-	manifest.FilterByAvailability(true)
 	if err != nil {
 		return err
 	}
+	manifest.FilterByAvailability(true)
 
 	if manifest.GetSlotCount() == 0 {
 		return errors.New("no available slots :(")
