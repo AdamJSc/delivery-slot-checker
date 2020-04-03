@@ -23,8 +23,8 @@ type checkDeliverySlotsTaskData struct {
 var AsdaCheckDeliverySlotsTask = Task(func(state *JobState, w WriterWithIdentifier) error {
 	state.LatestRun = time.Now()
 
-	if state.Bypass == true {
-		return errors.New("bypassing job...")
+	if state.Bypass {
+		return errors.New("bypassing job")
 	}
 
 	// retrieve and parse recipients data
