@@ -6,10 +6,11 @@ import (
 	"delivery-slot-checker/domain/transport"
 	"errors"
 	"fmt"
-	"gopkg.in/yaml.v2"
 	"io/ioutil"
 	"strings"
 	"time"
+
+	"gopkg.in/yaml.v2"
 )
 
 type checkDeliverySlotsTaskData struct {

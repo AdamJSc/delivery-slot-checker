@@ -10,7 +10,6 @@ func OfflineError(merchant string) error {
 	return fmt.Errorf("merchant offline: %s", strings.ToLower(merchant))
 }
 
-
 // FatalError represents an error that should force the stoppage of the job runner
 type FatalError struct {
 	Err error

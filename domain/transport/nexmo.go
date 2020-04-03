@@ -3,9 +3,10 @@ package transport
 import (
 	"errors"
 	"fmt"
-	"github.com/nexmo-community/nexmo-go"
 	"net/http"
 	"strings"
+
+	"github.com/nexmo-community/nexmo-go"
 )
 
 type NexmoTransporter struct {
