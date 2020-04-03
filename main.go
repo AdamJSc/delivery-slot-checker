@@ -1,11 +1,12 @@
 package main
 
 import (
-	"delivery-slot-checker/internal/work"
+	"delivery-slot-checker/domain/work"
 	"fmt"
-	"github.com/joho/godotenv"
 	"log"
 	"os"
+
+	"github.com/joho/godotenv"
 )
 
 // requiredEnv represents the env keys required by our program

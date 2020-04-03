@@ -6,10 +6,13 @@ import (
 )
 
 // OfflineError represents a failed attempt to connect to a merchant
-func OfflineError(merchant string) error {
-	return fmt.Errorf("merchant offline: %s", strings.ToLower(merchant))
+type OfflineError struct {
+	Merchant string
 }
 
+func (e OfflineError) Error() string {
+	return fmt.Sprintf("merchant offline: %s", strings.ToLower(e.Merchant))
+}
 
 // FatalError represents an error that should force the stoppage of the job runner
 type FatalError struct {

@@ -1,15 +1,16 @@
 package work
 
 import (
-	"delivery-slot-checker/internal/apperrors"
-	"delivery-slot-checker/internal/merchant"
-	"delivery-slot-checker/internal/transport"
+	"delivery-slot-checker/domain/apperrors"
+	"delivery-slot-checker/domain/merchant"
+	"delivery-slot-checker/domain/transport"
 	"errors"
 	"fmt"
-	"gopkg.in/yaml.v2"
 	"io/ioutil"
 	"strings"
 	"time"
+
+	"gopkg.in/yaml.v2"
 )
 
 type checkDeliverySlotsTaskData struct {
@@ -23,8 +24,8 @@ type checkDeliverySlotsTaskData struct {
 var AsdaCheckDeliverySlotsTask = Task(func(state *JobState, w WriterWithIdentifier) error {
 	state.LatestRun = time.Now()
 
-	if state.Bypass == true {
-		return errors.New("bypassing job...")
+	if state.Bypass {
+		return errors.New("bypassing job")
 	}
 
 	// retrieve and parse recipients data
@@ -70,10 +71,10 @@ func checkForDeliverySlots(data checkDeliverySlotsTaskData, state *JobState, w W
 	}
 
 	manifest, err := merchant.NewDeliveryManifest(client.GetName(), slots)
-	manifest.FilterByAvailability(true)
 	if err != nil {
 		return err
 	}
+	manifest.FilterByAvailability(true)
 
 	if manifest.GetSlotCount() == 0 {
 		return errors.New("no available slots :(")
