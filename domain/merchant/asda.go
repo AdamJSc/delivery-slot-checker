@@ -2,7 +2,7 @@ package merchant
 
 import (
 	"bytes"
-	"delivery-slot-checker/internal/apperrors"
+	"delivery-slot-checker/domain/apperrors"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"

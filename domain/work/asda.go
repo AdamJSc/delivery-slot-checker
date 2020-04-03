@@ -1,9 +1,9 @@
 package work
 
 import (
-	"delivery-slot-checker/internal/apperrors"
-	"delivery-slot-checker/internal/merchant"
-	"delivery-slot-checker/internal/transport"
+	"delivery-slot-checker/domain/apperrors"
+	"delivery-slot-checker/domain/merchant"
+	"delivery-slot-checker/domain/transport"
 	"errors"
 	"fmt"
 	"gopkg.in/yaml.v2"

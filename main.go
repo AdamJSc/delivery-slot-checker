@@ -1,7 +1,7 @@
 package main
 
 import (
-	"delivery-slot-checker/internal/work"
+	"delivery-slot-checker/domain/work"
 	"fmt"
 	"github.com/joho/godotenv"
 	"log"
