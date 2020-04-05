@@ -1,9 +1,0 @@
--
-  postcode: AB120AB
-  recipients:
-    -
-      name: John Doe    # recipient's name
-      mobile: +44XXX    # recipient's mobile number
-    -
-      name: Jane Doe    # recipient's name
-      mobile: +44XXX    # recipient's mobile number
