@@ -10,7 +10,7 @@ import (
 
 const stateDir = "./data/taskstate"
 
-// TaskState represents the latest state of our job
+// TaskState represents the latest state of our task
 type TaskState struct {
 	Bypass    bool      `json:"bypass"`
 	LatestRun time.Time `json:"latest_run"`
@@ -24,13 +24,13 @@ func LoadState(name string) (TaskState, error) {
 		return TaskState{}, err
 	}
 
-	var jobState TaskState
-	err = json.Unmarshal(contents, &jobState)
+	var taskState TaskState
+	err = json.Unmarshal(contents, &taskState)
 	if err != nil {
 		return TaskState{}, err
 	}
 
-	return jobState, err
+	return taskState, err
 }
 
 // SaveState stores task state on disk
