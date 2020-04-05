@@ -4,11 +4,18 @@ import (
 	"delivery-slot-checker/domain/apperrors"
 	"fmt"
 	"io"
+	"math/rand"
 	"os"
 	"time"
 )
 
+// minInterval determines the minimum permitted number of seconds' delay before a task is next run
 const minInterval = 600
+
+// offset determines the amount of interval flux +/-
+// a value of 7 with an interval setting of 600 would result in a real-life delay of
+// somewhere between 593 and 607 seconds
+const offset = 7
 
 // WriterWithIdentifier represents a writer with a log-style prefix that appears after a timestamp
 type WriterWithIdentifier struct {
@@ -76,7 +83,7 @@ func runTask(task Task, payload TaskPayload, w WriterWithIdentifier, ch chan Tas
 		os.Exit(1)
 	}
 
-	time.Sleep(payload.Interval * time.Second)
+	time.Sleep(getRandomisedInterval(payload.Interval) * time.Second)
 
 	ch <- task
 }
@@ -102,4 +109,26 @@ func (r Runner) Run() {
 			}
 		}
 	}
+}
+
+// getRandomisedInterval returns a random duration based on the provided interval
+func getRandomisedInterval(interval time.Duration) time.Duration {
+	var base, lowerLimit, upperLimit time.Duration
+
+	base = interval
+	if interval < minInterval {
+		base = minInterval
+	}
+
+	lowerLimit = base - offset
+	if base-offset <= 0 {
+		lowerLimit = base
+	}
+
+	upperLimit = base + offset
+
+	r := rand.New(rand.NewSource(time.Now().UnixNano()))
+	randomInterval := r.Intn((int(upperLimit) - int(lowerLimit) - 1) + int(lowerLimit))
+
+	return time.Duration(randomInterval)
 }

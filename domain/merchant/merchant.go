@@ -112,6 +112,7 @@ func (m *DeliveryManifest) FilterByAvailability(isAvailable bool) {
 	*m = filteredManifest
 }
 
+// NewDeliveryManifest populates a new DeliveryManifest from the provided merchantName and DeliverySlots
 func NewDeliveryManifest(merchantName string, slots []DeliverySlot) (DeliveryManifest, error) {
 	scheduleMap := make(map[string]DailySchedule)
 
