@@ -21,7 +21,7 @@ func checkForDeliverySlots(client merchant.Client, payload TaskPayload, state *T
 	state.LatestRun = time.Now()
 
 	if state.Bypass {
-		return errors.New("bypassing task")
+		return errors.New("bypassing task...")
 	}
 
 	now := time.Now()

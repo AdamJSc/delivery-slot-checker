@@ -115,7 +115,7 @@ func (r Runner) Run() {
 	}
 
 	// block indefinitely to allow runTask() goroutines to run within per-payload goroutines
-	// if any of the tasks return an apperrors.FatalError, current program will exit
+	// if any of the task runs return an apperrors.FatalError, current program will exit
 	func() { select {} }()
 }
 

@@ -1,7 +1,7 @@
 -
-  identifier: ab12-0ab
-  interval: 600
-  postcode: AB120AB
+  identifier: ab12-0ab   # log prefix
+  interval: 600          # number of seconds between each execution
+  postcode: AB120AB      # postcode to search
   recipients:
     -
       name: Mick      # recipient's name
