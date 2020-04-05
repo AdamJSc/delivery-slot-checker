@@ -26,6 +26,15 @@ func (w WriterWithIdentifier) Write(p []byte) (int, error) {
 	return w.Writer.Write([]byte(value))
 }
 
+// TaskPayload represents the data structure that will be passed to, and acted on by, a Task
+type TaskPayload struct {
+	Postcode   string `yaml:"postcode"`
+	Recipients []struct {
+		Name   string `yaml:"name"`
+		Mobile string `yaml:"mobile"`
+	} `yaml:"recipients"`
+}
+
 // Task represents the function executed by a Job
 type Task func(state *JobState, w WriterWithIdentifier) error
 
@@ -33,6 +42,7 @@ type Task func(state *JobState, w WriterWithIdentifier) error
 type Job struct {
 	Name     string
 	Task     Task
+	Payloads []TaskPayload
 	Interval time.Duration
 }
 
