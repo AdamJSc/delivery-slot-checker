@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"io"
 	"os"
-	"strings"
 	"time"
 )
 
@@ -28,7 +27,9 @@ func (w WriterWithIdentifier) Write(p []byte) (int, error) {
 
 // TaskPayload represents the data structure that will be passed to, and acted on by, a Task
 type TaskPayload struct {
-	Postcode   string `yaml:"postcode"`
+	Identifier string        `yaml:"identifier"`
+	Interval   time.Duration `yaml:"interval"`
+	Postcode   string        `yaml:"postcode"`
 	Recipients []struct {
 		Name   string `yaml:"name"`
 		Mobile string `yaml:"mobile"`
@@ -36,20 +37,13 @@ type TaskPayload struct {
 }
 
 // Task represents the function executed by a Job
-type Task func(state *JobState, w WriterWithIdentifier) error
+type Task func(payload TaskPayload, state *TaskState, w WriterWithIdentifier) error
 
 // Job represents a single unit of work
 type Job struct {
-	Name     string
-	Task     Task
-	Payloads []TaskPayload
-	Interval time.Duration
-}
-
-// GetIdentifier returns a formatted ID
-func (j Job) GetIdentifier() string {
-	lower := strings.Trim(strings.ToLower(j.Name), " ")
-	return strings.Replace(lower, " ", "-", -1)
+	Identifier string
+	Task       Task
+	Payloads   []TaskPayload
 }
 
 // Runner represents a collection of Jobs to execute continuously
@@ -58,9 +52,9 @@ type Runner struct {
 	Jobs   []Job
 }
 
-// runJob enables the concurrent execution of a Job
-func runJob(job Job, w WriterWithIdentifier, ch chan Job) {
-	stateName := fmt.Sprintf("%s_%s", job.GetIdentifier(), time.Now().Format("20060102"))
+// runTask enables the concurrent execution of a Task
+func runTask(task Task, payload TaskPayload, w WriterWithIdentifier, ch chan Task) {
+	stateName := fmt.Sprintf("%s_%s", payload.Identifier, time.Now().Format("20060102"))
 
 	state, err := LoadStateCreateIfMissing(stateName)
 	if err != nil {
@@ -68,7 +62,7 @@ func runJob(job Job, w WriterWithIdentifier, ch chan Job) {
 		os.Exit(1)
 	}
 
-	if err = job.Task(&state, w); err != nil {
+	if err = task(payload, &state, w); err != nil {
 		fmt.Fprintln(w, err)
 
 		switch err.(type) {
@@ -82,28 +76,30 @@ func runJob(job Job, w WriterWithIdentifier, ch chan Job) {
 		os.Exit(1)
 	}
 
-	time.Sleep(job.Interval * time.Second)
+	time.Sleep(payload.Interval * time.Second)
 
-	ch <- job
+	ch <- task
 }
 
 // Run executes all Jobs that belong to the Runner
 func (r Runner) Run() {
-	ch := make(chan Job)
+	ch := make(chan Task)
 	taskWriters := make(map[string]WriterWithIdentifier)
 
 	for _, job := range r.Jobs {
-		if job.Interval < minInterval {
-			fmt.Fprintf(r.Writer, "minimum interval %d: interval of %d too short for job '%s'\n", minInterval, job.Interval, job.Name)
-			os.Exit(1)
+		for _, payload := range job.Payloads {
+			payload.Identifier = fmt.Sprintf("%s_%s", job.Identifier, payload.Identifier)
+			taskWriters[payload.Identifier] = WriterWithIdentifier{Identifier: payload.Identifier, Writer: r.Writer}
+
+			if payload.Interval < minInterval {
+				payload.Interval = minInterval
+			}
+
+			go runTask(job.Task, payload, taskWriters[payload.Identifier], ch)
+
+			for task := range ch {
+				go runTask(task, payload, taskWriters[payload.Identifier], ch)
+			}
 		}
-
-		jobID := job.GetIdentifier()
-		taskWriters[jobID] = WriterWithIdentifier{Identifier: jobID, Writer: r.Writer}
-		go runJob(job, taskWriters[jobID], ch)
-	}
-
-	for job := range ch {
-		go runJob(job, taskWriters[job.GetIdentifier()], ch)
 	}
 }

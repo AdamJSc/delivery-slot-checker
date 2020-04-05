@@ -40,17 +40,17 @@ func main() {
 		log.Fatal(err)
 	}
 
-	asdaCheckDeliverySlotsJob := work.Job{
-		Name:     "asda-check-delivery-slots-job",
-		Task:     work.AsdaCheckDeliverySlotsTask,
-		Payloads: taskPayloads,
-		Interval: 600,
+	// configure Asda job
+	asdaDeliverySlotsJob := work.Job{
+		Identifier: "asda-delivery-slots",
+		Task:       work.AsdaDeliverySlotsTask,
+		Payloads:   taskPayloads,
 	}
 
 	runner := work.Runner{
 		Writer: os.Stdout,
 		Jobs: []work.Job{
-			asdaCheckDeliverySlotsJob,
+			asdaDeliverySlotsJob,
 		},
 	}
 

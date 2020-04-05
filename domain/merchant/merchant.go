@@ -153,10 +153,3 @@ type Client interface {
 	GetName() string
 	GetDeliverySlots(locationID string, from, to time.Time) ([]DeliverySlot, error)
 }
-
-// NewClient instantiates the default Client
-func NewClient() Client {
-	return AsdaClient{
-		URL: "https://groceries.asda.com/api/v3",
-	}
-}

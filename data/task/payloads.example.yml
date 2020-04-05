@@ -1,4 +1,6 @@
 -
+  identifier: ab12-0ab
+  interval: 600
   postcode: AB120AB
   recipients:
     -
@@ -14,6 +16,8 @@
       name: Charlie
       mobile: +44XXX
 -
+  identifier: ba21-9ba
+  interval: 600
   postcode: BA219BA
   recipients:
     -
