@@ -102,13 +102,21 @@ func (r Runner) Run() {
 				payload.Interval = minInterval
 			}
 
-			go runTask(job.Task, payload, taskWriters[payload.Identifier], ch)
+			go func(payload TaskPayload) {
+				// initial randomised interval
+				time.Sleep(getRandomisedInterval(payload.Interval) * time.Second)
+				go runTask(job.Task, payload, taskWriters[payload.Identifier], ch)
 
-			for task := range ch {
-				go runTask(task, payload, taskWriters[payload.Identifier], ch)
-			}
+				for task := range ch {
+					go runTask(task, payload, taskWriters[payload.Identifier], ch)
+				}
+			}(payload)
 		}
 	}
+
+	// block indefinitely to allow runTask() goroutines to run within per-payload goroutines
+	// if any of the tasks return an apperrors.FatalError, current program will exit
+	func() { select {} }()
 }
 
 // getRandomisedInterval returns a random duration based on the provided interval
