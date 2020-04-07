@@ -61,7 +61,7 @@ type Runner struct {
 
 // runTask enables the concurrent execution of a Task
 func runTask(task Task, payload TaskPayload, w WriterWithIdentifier, ch chan Task) {
-	stateName := fmt.Sprintf("%s_%s", payload.Identifier, time.Now().Format("20060102"))
+	stateName := fmt.Sprintf("%s_%s", time.Now().Format("20060102"), payload.Identifier)
 
 	state, err := LoadStateCreateIfMissing(stateName)
 	if err != nil {
@@ -136,7 +136,7 @@ func getRandomisedInterval(interval time.Duration) time.Duration {
 	upperLimit = base + offset
 
 	r := rand.New(rand.NewSource(time.Now().UnixNano()))
-	randomInterval := r.Intn((int(upperLimit) - int(lowerLimit) - 1) + int(lowerLimit))
+	randomInterval := r.Intn(int(upperLimit)-int(lowerLimit)-1) + int(lowerLimit)
 
 	return time.Duration(randomInterval)
 }
