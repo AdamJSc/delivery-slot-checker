@@ -15,10 +15,11 @@ const (
 	asdaStatusUnavailable = "UNAVAILABLE"
 )
 
+var asdaURL = "https://groceries.asda.com/api/v3"
+
 // AsdaClient defines a client for interacting with the Asda supermarket.
 type AsdaClient struct {
 	Client
-	URL string
 }
 
 // GetName returns the supermarket name.
@@ -36,7 +37,7 @@ func (c AsdaClient) GetDeliverySlots(postcode string, from, to time.Time) ([]Del
 	}
 
 	httpResponse, err := http.Post(
-		fmt.Sprintf("%s/slot/view", c.URL),
+		fmt.Sprintf("%s/slot/view", asdaURL),
 		"application/json",
 		bytes.NewReader(httpRequestBody),
 	)

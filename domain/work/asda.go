@@ -11,10 +11,7 @@ import (
 )
 
 var AsdaDeliverySlotsTask = Task(func(payload TaskPayload, state *TaskState, w WriterWithIdentifier) error {
-	asdaClient := merchant.AsdaClient{
-		URL: "https://groceries.asda.com/api/v3",
-	}
-	return checkForDeliverySlots(asdaClient, payload, state, w)
+	return checkForDeliverySlots(merchant.AsdaClient{}, payload, state, w)
 })
 
 func checkForDeliverySlots(client merchant.Client, payload TaskPayload, state *TaskState, w WriterWithIdentifier) error {
