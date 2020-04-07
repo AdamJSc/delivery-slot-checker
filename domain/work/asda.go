@@ -67,7 +67,7 @@ func checkForDeliverySlots(client merchant.Client, payload TaskPayload, state *T
 		}
 	}
 
-	state.BypassUntil = now.Add(bypassDuration * time.Second)
+	state.BypassUntil = now.Add(getDefaultBypassDuration())
 
 	return nil
 }

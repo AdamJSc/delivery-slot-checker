@@ -18,7 +18,7 @@ const minInterval = 600
 // somewhere between 593 and 607 seconds
 const offset = 7
 
-// bypassDuration represents a default duration in seconds for which bypassed tasks should be ignored by the runner
+// bypassDuration represents a default duration in minutes for which bypassed tasks should be ignored by the runner
 const bypassDuration = 120
 
 // WriterWithIdentifier represents a writer with a log-style prefix that appears after a timestamp
@@ -150,4 +150,8 @@ func getRandomisedInterval(interval time.Duration) time.Duration {
 	randomInterval := r.Intn(int(upperLimit)-int(lowerLimit)-1) + int(lowerLimit)
 
 	return time.Duration(randomInterval)
+}
+
+func getDefaultBypassDuration() time.Duration {
+	return bypassDuration * time.Minute
 }

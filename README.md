@@ -42,9 +42,9 @@ without the burden of needing to physically do so).
 It has been written to make this check at approximately 10-minute intervals by default, in order to prevent unnecessary spikes in
 traffic to the Asda site.
 
-Also, for each postcode this process will only be performed each day until at least one available delivery slot has been
-retrieved for the first time. Once an SMS has been sent to all recipients, this task is bypassed for the rest of the
-current day, and will resume again after midnight.
+Also, for each postcode this process will be performed each day until at least one available delivery slot has been
+retrieved for the first time. Once an SMS has been sent to all recipients, this task is bypassed for a set duration
+of time (default is 2 hours), and will resume again after this point.
 
 The interval setting can be changed in the code prior to execution.
 
