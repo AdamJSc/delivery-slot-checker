@@ -15,13 +15,9 @@ var AsdaDeliverySlotsTask = Task(func(payload TaskPayload, state *TaskState, w W
 })
 
 func checkForDeliverySlots(client merchant.Client, payload TaskPayload, state *TaskState, w WriterWithIdentifier) error {
-	state.LatestRun = time.Now()
-
-	if state.Bypass {
-		return errors.New("bypassing task...")
-	}
-
 	now := time.Now()
+	state.LatestRun = now
+
 	loc, err := time.LoadLocation("Europe/London")
 	if err != nil {
 		return apperrors.FatalError{Err: err}
@@ -71,7 +67,7 @@ func checkForDeliverySlots(client merchant.Client, payload TaskPayload, state *T
 		}
 	}
 
-	state.Bypass = true
+	state.BypassUntil = now.Add(bypassDuration * time.Second)
 
 	return nil
 }

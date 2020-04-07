@@ -12,9 +12,9 @@ const stateDir = "./data/taskstate"
 
 // TaskState represents the latest state of our task
 type TaskState struct {
-	Bypass    bool      `json:"bypass"`
-	LatestRun time.Time `json:"latest_run"`
-	FirstRun  time.Time `json:"first_run"`
+	BypassUntil time.Time `json:"bypass_until"`
+	LatestRun   time.Time `json:"latest_run"`
+	FirstRun    time.Time `json:"first_run"`
 }
 
 // LoadState reads task state from disk

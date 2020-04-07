@@ -2,6 +2,7 @@ package work
 
 import (
 	"delivery-slot-checker/domain/apperrors"
+	"errors"
 	"fmt"
 	"io"
 	"math/rand"
@@ -16,6 +17,9 @@ const minInterval = 600
 // a value of 7 with an interval setting of 600 would result in a real-life delay of
 // somewhere between 593 and 607 seconds
 const offset = 7
+
+// bypassDuration represents a default duration in seconds for which bypassed tasks should be ignored by the runner
+const bypassDuration = 120
 
 // WriterWithIdentifier represents a writer with a log-style prefix that appears after a timestamp
 type WriterWithIdentifier struct {
@@ -69,7 +73,14 @@ func runTask(task Task, payload TaskPayload, w WriterWithIdentifier, ch chan Tas
 		os.Exit(1)
 	}
 
-	if err = task(payload, &state, w); err != nil {
+	var checkForBypassAndRun = func() error {
+		if time.Now().Before(state.BypassUntil) {
+			return errors.New("bypassing task...")
+		}
+		return task(payload, &state, w)
+	}
+
+	if err = checkForBypassAndRun(); err != nil {
 		fmt.Fprintln(w, err)
 
 		switch err.(type) {
