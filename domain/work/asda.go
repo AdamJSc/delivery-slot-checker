@@ -24,10 +24,10 @@ func checkForDeliverySlots(client merchant.Client, payload TaskPayload, state *T
 	}
 
 	todayAtMidnight := time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, loc)
-	tsInSevenDays := todayAtMidnight.Add(7 * 24 * time.Hour)
+	tsTomorrow := todayAtMidnight.Add(24 * time.Hour)
 	tsInTwentyOneDays := todayAtMidnight.Add(22 * 24 * time.Hour).Add(-time.Second)
 
-	slots, err := client.GetDeliverySlots(payload.Postcode, tsInSevenDays, tsInTwentyOneDays)
+	slots, err := client.GetDeliverySlots(payload.Postcode, tsTomorrow, tsInTwentyOneDays)
 	if err != nil {
 		return err
 	}
