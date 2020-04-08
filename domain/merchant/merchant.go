@@ -91,7 +91,7 @@ func (m *DeliveryManifest) FilterByAvailability(isAvailable bool) {
 		MerchantName:   m.MerchantName,
 		From:           m.From,
 		Until:          m.Until,
-		DailySchedules: nil,
+		DailySchedules: []DailySchedule,
 		Created:        m.Created,
 	}
 
@@ -106,12 +106,15 @@ func (m *DeliveryManifest) FilterByAvailability(isAvailable bool) {
 			}
 		}
 
-		filteredManifest.DailySchedules = append(filteredManifest.DailySchedules, filteredSchedule)
+		if len(filteredSchedule.Slots) > 0 {
+			filteredManifest.DailySchedules = append(filteredManifest.DailySchedules, filteredSchedule)
+		}
 	}
 
 	*m = filteredManifest
 }
 
+// NewDeliveryManifest populates a new DeliveryManifest from the provided merchantName and DeliverySlots
 func NewDeliveryManifest(merchantName string, slots []DeliverySlot) (DeliveryManifest, error) {
 	scheduleMap := make(map[string]DailySchedule)
 
@@ -152,11 +155,4 @@ func NewDeliveryManifest(merchantName string, slots []DeliverySlot) (DeliveryMan
 type Client interface {
 	GetName() string
 	GetDeliverySlots(locationID string, from, to time.Time) ([]DeliverySlot, error)
-}
-
-// NewClient instantiates the default Client
-func NewClient() Client {
-	return AsdaClient{
-		URL: "https://groceries.asda.com/api/v3",
-	}
 }

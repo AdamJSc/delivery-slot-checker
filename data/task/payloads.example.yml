@@ -1,0 +1,34 @@
+-
+  identifier: ab12-0ab   # log prefix
+  interval: 600          # number of seconds between each execution
+  postcode: AB120AB      # postcode to search
+  recipients:
+    -
+      name: Mick      # recipient's name
+      mobile: +44XXX  # recipient's mobile number
+    -
+      name: Keith
+      mobile: +44XXX
+    -
+      name: Ronnie
+      mobile: +44XXX
+    -
+      name: Charlie
+      mobile: +44XXX
+-
+  identifier: ba21-9ba
+  interval: 600
+  postcode: BA219BA
+  recipients:
+    -
+      name: Johnny
+      mobile: +44XXX
+    -
+      name: Joey
+      mobile: +44XXX
+    -
+      name: Dee Dee
+      mobile: +44XXX
+    -
+      name: Tommy
+      mobile: +44XXX

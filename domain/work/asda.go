@@ -6,66 +6,28 @@ import (
 	"delivery-slot-checker/domain/transport"
 	"errors"
 	"fmt"
-	"io/ioutil"
 	"strings"
 	"time"
-
-	"gopkg.in/yaml.v2"
 )
 
-type checkDeliverySlotsTaskData struct {
-	Postcode   string `yaml:"postcode"`
-	Recipients []struct {
-		Name   string `yaml:"name"`
-		Mobile string `yaml:"mobile"`
-	} `yaml:"recipients"`
-}
-
-var AsdaCheckDeliverySlotsTask = Task(func(state *JobState, w WriterWithIdentifier) error {
-	state.LatestRun = time.Now()
-
-	if state.Bypass {
-		return errors.New("bypassing job")
-	}
-
-	// retrieve and parse recipients data
-	taskDataFileContents, err := ioutil.ReadFile("./data/tasks/asda-check-delivery-slots.yml")
-	if err != nil {
-		return apperrors.FatalError{Err: err}
-	}
-
-	var taskData []checkDeliverySlotsTaskData
-
-	err = yaml.Unmarshal(taskDataFileContents, &taskData)
-	if err != nil {
-		return apperrors.FatalError{Err: err}
-	}
-
-	// begin tasks...
-	for _, data := range taskData {
-		err = checkForDeliverySlots(data, state, w)
-		if err != nil {
-			return err
-		}
-	}
-
-	return nil
+var AsdaDeliverySlotsTask = Task(func(payload TaskPayload, state *TaskState, w WriterWithIdentifier) error {
+	return checkForDeliverySlots(merchant.AsdaClient{}, payload, state, w)
 })
 
-func checkForDeliverySlots(data checkDeliverySlotsTaskData, state *JobState, w WriterWithIdentifier) error {
-	client := merchant.NewClient()
-
+func checkForDeliverySlots(client merchant.Client, payload TaskPayload, state *TaskState, w WriterWithIdentifier) error {
 	now := time.Now()
+	state.LatestRun = now
+
 	loc, err := time.LoadLocation("Europe/London")
 	if err != nil {
 		return apperrors.FatalError{Err: err}
 	}
 
 	todayAtMidnight := time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, loc)
-	tsInSevenDays := todayAtMidnight.Add(7 * 24 * time.Hour)
+	tsTomorrow := todayAtMidnight.Add(24 * time.Hour)
 	tsInTwentyOneDays := todayAtMidnight.Add(22 * 24 * time.Hour).Add(-time.Second)
 
-	slots, err := client.GetDeliverySlots(data.Postcode, tsInSevenDays, tsInTwentyOneDays)
+	slots, err := client.GetDeliverySlots(payload.Postcode, tsTomorrow, tsInTwentyOneDays)
 	if err != nil {
 		return err
 	}
@@ -93,7 +55,7 @@ func checkForDeliverySlots(data checkDeliverySlotsTaskData, state *JobState, w W
 	)
 
 	transporter := transport.NewTransporter()
-	for _, recipient := range data.Recipients {
+	for _, recipient := range payload.Recipients {
 		message := transport.Message{
 			From: "SlotChecker",
 			To:   recipient.Mobile,
@@ -105,7 +67,7 @@ func checkForDeliverySlots(data checkDeliverySlotsTaskData, state *JobState, w W
 		}
 	}
 
-	state.Bypass = true
+	state.BypassUntil = now.Add(getDefaultBypassDuration())
 
 	return nil
 }

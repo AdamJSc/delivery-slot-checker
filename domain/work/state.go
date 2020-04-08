@@ -8,34 +8,33 @@ import (
 	"time"
 )
 
-const stateDir = "./data/jobstate"
+const stateDir = "./data/taskstate"
 
-// JobState represents the latest state of our job
-type JobState struct {
-	Bypass    bool      `json:"bypass"`
-	Status    string    `json:"status"`
-	LatestRun time.Time `json:"latest_run"`
-	FirstRun  time.Time `json:"first_run"`
+// TaskState represents the latest state of our task
+type TaskState struct {
+	BypassUntil time.Time `json:"bypass_until"`
+	LatestRun   time.Time `json:"latest_run"`
+	FirstRun    time.Time `json:"first_run"`
 }
 
-// LoadState reads job state from disk
-func LoadState(name string) (JobState, error) {
+// LoadState reads task state from disk
+func LoadState(name string) (TaskState, error) {
 	contents, err := ioutil.ReadFile(getFullPathToStateFile(name))
 	if err != nil {
-		return JobState{}, err
+		return TaskState{}, err
 	}
 
-	var jobState JobState
-	err = json.Unmarshal(contents, &jobState)
+	var taskState TaskState
+	err = json.Unmarshal(contents, &taskState)
 	if err != nil {
-		return JobState{}, err
+		return TaskState{}, err
 	}
 
-	return jobState, err
+	return taskState, err
 }
 
-// SaveState stores job state on disk
-func SaveState(name string, state JobState) error {
+// SaveState stores task state on disk
+func SaveState(name string, state TaskState) error {
 	err := os.MkdirAll(stateDir, 0755)
 	if err != nil {
 		return err
@@ -50,17 +49,17 @@ func SaveState(name string, state JobState) error {
 }
 
 // LoadStateCreateIfMissing will attempt to load state from disk, or create if not existing
-func LoadStateCreateIfMissing(name string) (JobState, error) {
+func LoadStateCreateIfMissing(name string) (TaskState, error) {
 	state, err := LoadState(name)
 
 	if err != nil {
 		// save initial state
-		state = JobState{
+		state = TaskState{
 			FirstRun:  time.Now(),
 			LatestRun: time.Now(),
 		}
 		if err := SaveState(name, state); err != nil {
-			return JobState{}, err
+			return TaskState{}, err
 		}
 	}
 
