@@ -91,7 +91,7 @@ func (m *DeliveryManifest) FilterByAvailability(isAvailable bool) {
 		MerchantName:   m.MerchantName,
 		From:           m.From,
 		Until:          m.Until,
-		DailySchedules: []DailySchedule,
+		DailySchedules: []DailySchedule{},
 		Created:        m.Created,
 	}
 
