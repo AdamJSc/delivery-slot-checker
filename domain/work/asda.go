@@ -32,7 +32,7 @@ func checkForDeliverySlots(client merchant.Client, payload TaskPayload, state *T
 		return err
 	}
 
-	manifest, err := merchant.NewDeliveryManifest(client.GetName(), slots)
+	manifest, err := merchant.NewDeliveryManifest(client.GetName(), payload.Postcode, slots)
 	if err != nil {
 		return err
 	}
