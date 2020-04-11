@@ -23,6 +23,7 @@ type DailySchedule struct {
 // DeliveryManifest represents a series of DailySchedules
 type DeliveryManifest struct {
 	MerchantName   string
+	Postcode       string
 	From           time.Time
 	Until          time.Time
 	DailySchedules []DailySchedule
@@ -37,9 +38,10 @@ func (m DeliveryManifest) AsMessageText(name string) string {
 	}
 
 	return fmt.Sprintf(
-		"Hi %s, %s forthcoming slots as at %s: %s",
+		"Hi %s, forthcoming slots for %s (%s) correct at %s: %s",
 		name,
 		m.MerchantName,
+		m.Postcode,
 		time.Now().Format("3:04pm"),
 		strings.Join(summaries, ", "),
 	)
@@ -89,6 +91,7 @@ func (m DeliveryManifest) SortByDate(asc bool) {
 func (m *DeliveryManifest) FilterByAvailability(isAvailable bool) {
 	filteredManifest := DeliveryManifest{
 		MerchantName:   m.MerchantName,
+		Postcode:       m.Postcode,
 		From:           m.From,
 		Until:          m.Until,
 		DailySchedules: []DailySchedule{},
@@ -115,7 +118,7 @@ func (m *DeliveryManifest) FilterByAvailability(isAvailable bool) {
 }
 
 // NewDeliveryManifest populates a new DeliveryManifest from the provided merchantName and DeliverySlots
-func NewDeliveryManifest(merchantName string, slots []DeliverySlot) (DeliveryManifest, error) {
+func NewDeliveryManifest(merchantName string, postcode string, slots []DeliverySlot) (DeliveryManifest, error) {
 	scheduleMap := make(map[string]DailySchedule)
 
 	for _, slot := range slots {
@@ -136,6 +139,7 @@ func NewDeliveryManifest(merchantName string, slots []DeliverySlot) (DeliveryMan
 
 	manifest := DeliveryManifest{
 		MerchantName: merchantName,
+		Postcode:     postcode,
 		Created:      time.Now(),
 	}
 	for _, schedule := range scheduleMap {
